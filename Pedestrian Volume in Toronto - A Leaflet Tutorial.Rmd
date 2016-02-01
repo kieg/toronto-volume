@@ -1,0 +1,212 @@
+---
+title: "Toronto Pedestrian Volume Visualized in Leaflet"
+author: "Kie Gouveia"
+output: html_document
+---
+
+Leaflet is an incredibly popular and powerful open-source JavaScript library which can be used to create beautiful, customizable interactive maps. It is also a tool that I have wanted to play around with for some time now!The [Leaflet for R](https://rstudio.github.io/leaflet/) package provided me with the perfect opportunity to do so. 
+
+First though, I needed some data to work with. For that, I looked to Open Data Toronto where I found [Signalized Intersection Traffic and Pedestrian Volume](http://www1.toronto.ca/wps/portal/contentonly?vgnextoid=417aed3c99cc7310VgnVCM1000003dd60f89RCRD&vgnextchannel=1a66e03bb8d1e310VgnVCM10000071d60f89RCRD) containing interesting information about the average quantity of pedestrians and vehicles at various intersections throughout the city. 
+
+It has turned out to be a fairly ideal dataset to work with, allowing me to generate some beautiful visualizations like the one below, which depicts pedestrian volume levels (as of 2011). 
+
+Go ahead, drag and click on the map below to investigate some of the most congested intersections in the city!
+
+```{r, echo = FALSE, message = FALSE}
+
+library(magrittr)
+library(leaflet) # load our libraries
+
+
+setwd("~/GitHub/toronto_ped_traffic_volume") # set working directory
+
+
+files = list.files(pattern = "*.csv") # Retrieve file names
+
+file.list <- lapply(files, 
+                    function(x) read.csv(x, header = TRUE, stringsAsFactors = FALSE)) # Read files
+
+names(file.list) <- c("vol_2011","vol_2012","vol_2013") # name each component of list
+ 
+# note the invisible function keeps lapply from spitting out the data.frames to the console
+invisible(lapply(names(file.list), 
+                 function(x) assign(x,file.list[[x]],envir=.GlobalEnv)))
+
+
+# create an intersection name that can be used as an in-map pop-up.
+vol_2011$Intersection <- paste(vol_2011$Main, "&", vol_2011$Side.1.Route)
+
+
+vol_2011 <- as.data.frame(lapply(vol_2011, function(x) gsub(",", "", x))) # remove pesky commas from quantity columns
+
+
+numeric_items <- vol_2011[,10:13] # identify (soon to be) numeric columns
+
+numeric_items <- apply(numeric_items, 2, 
+                       function(x) as.numeric(x)) # convert to numeric
+
+
+vol_2011[,10:13] <- numeric_items # put them back into our orginal dataframe
+
+
+# below I am creating a dummy variable that will be used to determine the size of the rings in the map
+vol_2011$size <- ((vol_2011$X8HrPedVol - min(vol_2011$X8HrPedVol)) /
+  (max(vol_2011$X8HrPedVol) - min(vol_2011$X8HrPedVol))) * 15
+
+
+# Create a continuous palette function. Essentially, map our value to a series of colours to create a gradient
+pal <- colorNumeric(
+  palette = "Blues",
+  domain = vol_2011$X24HrPedVol
+)
+
+# Other colours here: http://rstudio.github.io/leaflet/colors.html
+
+
+# Below, we create  the final map
+
+m = leaflet(vol_2011) %>%   
+  setView(lng = -79.381, lat = 43.656, zoom = 14) %>% #center the map on tonto
+  addTiles() %>%  # Adds in the default OpenStreetMap map tiles - we will overwrite in this case
+  addProviderTiles("CartoDB.Positron") %>% # Overwriting with another map tile sset
+  addCircleMarkers(radius = ~size,  # here we add in circles which correspond with pedestrian traffic
+                   color = ~pal(X24HrPedVol), 
+                   popup= ~Intersection, 
+                   fill = TRUE, 
+                   opacity = .8,
+                   fillOpacity = .8) %>%
+  addLegend("bottomright", pal = pal, values = ~X24HrPedVol, # Adding a legend for colour interpretation
+            title = "Pedestrian Volume 24hr Avg.",
+            opacity = 1
+  )
+```
+
+```{r, echo = FALSE, out.width = '900px', message = FALSE}
+m
+```
+
+
+
+### How to make it 
+
+How did this all come together? Leaflet for R actually makes it quite easy.The steps below will walk you through each of the steps I took to create the map above. 
+
+1. **Obtain data:** The first thing to do was obtain the data. I fyou are interested in using the same dataset, it is located [here](http://www1.toronto.ca/wps/portal/contentonly?vgnextoid=417aed3c99cc7310VgnVCM1000003dd60f89RCRD&vgnextchannel=1a66e03bb8d1e310VgnVCM10000071d60f89RCRD). I first converted these files to .csv format for ease and renamed the 2011 file to standardize the nomenclature. 
+
+2. **Load packages:** Next I loaded the relevant libraries. For this particular project, I only used two packages, although you could get away with using only one (Leaflet):
+
+**Leaflet** - the package you will be using to define and create your maps.  
+**Magrittr** - a package that simplifies some syntax, allowing for the use of the pipe %>% character.
+
+
+
+```{r, evaluate = FALSE, message = FALSE}
+library(leaflet) 
+library(magrittr)
+```
+
+3. **Read files:** Next, I read in the relevant files. Rather than load each file individually, I automated the process by listing the files using *list.files()*, applied the *read.csv()* command to each component of the list using *lapply()* then named the components using *names()*. Finally, I assigned each component to the global environment where they can be accessed as individual dataframes.  
+
+```{r, evaluate = FALSE, message = FALSE}
+files = list.files(pattern = "*.csv") # Retrieve file names
+
+file.list <- lapply(files, 
+                    function(x) read.csv(x, header = TRUE, stringsAsFactors = FALSE)) # Read files
+
+names(file.list) <- c("vol_2011","vol_2012","vol_2013") # name each component of list
+ 
+# note the invisible function keeps lapply from spitting out the data.frames to the console
+invisible(lapply(names(file.list), 
+                 function(x) assign(x,file.list[[x]],envir=.GlobalEnv)))
+```
+
+4. **Pre-processing:** There were a few housekeeping steps which needed to be completed prior to plotting. 
+
+First, the data contained two columns to identify each intersection: **Main**, for the primary street, and **Side.1.Route**, for the secondary street. The end goal was to allow the user to identify each intersection via popups on the map, so I used the *paste()* function to create a single name identifying the intersecting roads and put the results in a column named **Intersection**.
+
+```{r, evaluate = FALSE}
+# create an intersection name that can be used as an in-map pop-up.
+vol_2011$Intersection <- paste(vol_2011$Main, "&", vol_2011$Side.1.Route)
+
+```
+
+Next, the average quantity of people and vehicles at each intersection were read in as characters (rather than numeric variables) and formatted with commas. We can use use *gsub()* to remove the commas and *as.numeric()* to convert the numbers to the correct format (one that is usable by Leaflet).
+
+```{r, evaluate = FALSE}
+vol_2011 <- as.data.frame(lapply(vol_2011, function(x) gsub(",", "", x))) # remove pesky commas from quantity columns
+
+numeric_items <- vol_2011[,10:13] # identify (soon to be) numeric columns
+
+numeric_items <- apply(numeric_items, 2, 
+                       function(x) as.numeric(x)) # convert to numeric
+
+vol_2011[,10:13] <- numeric_items # put them back into our orginal dataframe
+```
+  
+5. **Visualizing the data:** For this map, I used two indicators to depict areas with higher/lower average number of people: 
+- **circle size** (bigger = higher)  
+- **colour** (darker blue = higher)  
+  
+To let Leaflet know how big to make each circle, I used a simple equation to create a new column called **size** which would be drawn upon while generating the circles. The equation first normalizes the variable of interest, changing its range to be between 0 and 1. It then multiplies that number by 15 simply to change the numbers into ones that are appropriate for Leaflets circle sizes.  
+
+In this case, I decided to visualize **the average number of people over a 24 hr period**, which is named **X8HrPedVol**.
+
+```{r, evaluate = FALSE}
+# below I am creating a dummy variable that will be used to determine the size of the rings in the map
+vol_2011$size <- ((vol_2011$X8HrPedVol - min(vol_2011$X8HrPedVol)) /
+  (max(vol_2011$X8HrPedVol) - min(vol_2011$X8HrPedVol))) * 15
+```
+
+
+To create the colour gradient, I used the *colorNumeric()* function to map the range of values in **X8HrPedVol** to a range of colours. In this case, I chose to map the values to the "Blues" palette, but you can play with this yourself. For more information, you can have a look [here](http://rstudio.github.io/leaflet/colors.html)
+
+
+```{r, evaluate = FALSE}
+# Create a continuous palette function. Essentially, map our value to a series of colours to create a gradient
+pal <- colorNumeric(
+  palette = "Blues",
+  domain = vol_2011$X24HrPedVol
+)
+```
+
+
+6. **Generate the map:** That is all of the preparation that is needed! Now I am ready to use the Leafet package to create the interactive map. 
+
+First, I fed the dataframe into the leaflet function and assigned it to **m**. Next, I modified **m** using a number of functions within the Leaflet package:
+
+*setView()* allows you to tell Leaflet where you would initially like the map to focus, and how closely to focus on that point. 
+
+*addTiles()* will layer in the default OpenStreetMap map tiles. I have opted to use a different set, which required the use of *addProviderTile()* instead. To see more options, you can have a look [here](https://rstudio.github.io/leaflet/basemaps.html). I particularly like the look of Stamen.Toner!
+
+*addCircleMarkers()* allows you to visualize our data by overlaying circles of varying size and colour over top of the map we have created. To alter the size or each circle based on average number of people in a 24hr period, I set radius equal to the **size** variable created earlier, and to adjust the colors, I set color equal to **pal**, which contains our colour-mapped numeric values. 
+
+*addLegend()* is fairly self-explanatory and allow you to input a legend onto your map. In this case, it specifies the quantity of people associated with circles of various colour. 
+
+```{r, evaluate = FALSE}
+# Below, we create  the final map
+
+m = leaflet(vol_2011) %>%   
+  setView(lng = -79.381, lat = 43.656, zoom = 14) %>% # center the map on Toronto
+  addTiles() %>%  # Adds in the default OpenStreetMap map tiles - we will overwrite in this case
+  addProviderTiles("CartoDB.Positron") %>% # Overwriting with another map tile sset
+  addCircleMarkers(radius = ~size,  # here we add in circles which correspond with pedestrian traffic
+                   color = ~pal(X24HrPedVol), 
+                   popup= ~Intersection, 
+                   fill = TRUE, 
+                   opacity = .8,
+                   fillOpacity = .8) %>%
+  addLegend("bottomright", pal = pal, values = ~X24HrPedVol, # Adding a legend for colour interpretation
+            title = "Pedestrian Volume",
+            opacity = 1
+  )
+```
+
+
+
+That is all! Once you call **m**, you should now see the map below.
+
+```{r, echo = FALSE, out.width = '900px', message = FALSE}
+m
+```
+
+
