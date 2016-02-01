@@ -8,12 +8,12 @@ The published tutorial is available here: http://rpubs.com/kieg/toronto-volume-l
 
 Files contained:
   
-  "Pedestrian Volume in Toronto - A Leaflet Tutorial.Rmd" - RMarkdown used to created published tutorial
-  "Pedestrian Volume in Toronto - A Leaflet Tutorial.html"
-  "toronto_volume.R" - initial file where map was constructed
+  "Pedestrian Volume in Toronto - A Leaflet Tutorial.Rmd" - RMarkdown used to created published tutorial  
+  "Pedestrian Volume in Toronto - A Leaflet Tutorial.html"  
+  "toronto_volume.R" - initial file where map was constructed  
   
-  Open Data Toronto Data
-    "Signalized Traffic Ped Volume-2011.csv"
-    "Signalized Traffic Ped Volume-2012.csv"
-    "Signalized Traffic Ped Volume-2013.csv"
-    "signalizedTrafficPedestrianVolumesReadme.csv"
+  Open Data Toronto Data  
+    "Signalized Traffic Ped Volume-2011.csv"  
+    "Signalized Traffic Ped Volume-2012.csv"  
+    "Signalized Traffic Ped Volume-2013.csv"  
+    "signalizedTrafficPedestrianVolumesReadme.csv"  
