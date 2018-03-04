@@ -1,8 +1,5 @@
 ---
 title: "2011 Pedestrian Volume at Toronto Intersections"
-output: 
-  html_document:
-    keep_md: true
 ---
 
 ###Introduction
@@ -13,7 +10,7 @@ The tutorial leverages data from Open Data Toronto - specifically, the [Signaliz
 
 * The final product of this tutorial is hosted on RPubs at: https://rpubs.com/kieg/149260
 
-* All associated documentation can be found on Github at: https://github.com/kieg/toronto-volume 
+* All associated documentation can be found on Github at: https://rpubs.com/kieg/toronto-ped-volume
 
 **The final product - **By the end of the tutorial, you will have created the interactive map below. Go ahead, drag and click on the map below to investigate some of the most congested intersections in the city!
 
