@@ -4,7 +4,7 @@ Kie Gouveia
 
 This project was designed in order to explore Leaflet for R. The goal was to visualize average pedestrian traffic at downtown Toronto intersections using Open Data Toronto data.  
 
-**The published tutorial is available here:** http://rpubs.com/kieg/toronto-volume-leaflet. 
+**The published tutorial is available here:** https://rpubs.com/kieg/toronto-ped-volume. 
 
 Files contained:
   
